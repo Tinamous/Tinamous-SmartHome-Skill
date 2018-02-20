@@ -1,0 +1,85 @@
+﻿{
+  "context": {
+    "properties": [
+      {
+        "namespace": "Alexa.Cooking",
+        "name": "cookingMode",
+        "value": "TIMECOOK",
+        "timeOfSample": "2017-08-31T23:30:00Z",
+        "uncertaintyInMilliseconds": 0
+      },
+      {
+        "namespace": "Alexa.Cooking",
+        "name": "cookCompletionTime",
+        "value": "2017-08-31T23:55Z",
+        "timeOfSample": "2017-08-31T23:30:00Z",
+        "uncertaintyInMilliseconds": 0
+      },
+      {
+        "namespace": "Alexa.Cooking",
+        "name": "isCookCompletionTimeEstimated",
+        "value": false,
+        "timeOfSample": "2017-08-31T23:30:00Z",
+        "uncertaintyInMilliseconds": 0
+      },
+      {
+        "namespace": "Alexa.Cooking",
+        "name": "isHolding",
+        "value": false,
+        "timeOfSample": "2017-08-31T23:30:00Z",
+        "uncertaintyInMilliseconds": 0
+      },
+      {
+        "namespace": "Alexa.Cooking",
+        "name": "foodItem",
+        "value": {
+          "foodName": "Rice Pilaf",
+          "foodCategory": "Rice",
+          "foodQuantity": {
+            "@type": "VOLUME",
+            "value": "2",
+            "unit": "US_FLUID_CUP"
+          }
+        },
+        "timeOfSample": "2017-08-31T23:30:00Z",
+        "uncertaintyInMilliseconds": 0
+      },
+      {
+        "namespace": "Alexa.Cooking.TimeController",
+        "name": "requestedCookTime",
+        "value": "PT25M",
+        "timeOfSample": "2017-08-31T23:30:00Z",
+        "uncertaintyInMilliseconds": 0
+      },
+      {
+        "namespace": "Alexa.Cooking.TimeController",
+        "name": "cookingPowerLevel",
+        "value": {
+          "@type": "EnumeratedPowerLevel",
+          "value": "HIGH"
+        },
+        "timeOfSample": "2017-08-31T23:30:00Z",
+        "uncertaintyInMilliseconds": 0
+      }
+    ]
+  },
+  "event": {
+    "header": {
+      "namespace": "Alexa",
+      "name": "Response",
+      "messageId": "5f8a426e-01e4-4cc9-8b79-65f8bd0fd8a4",
+      "correlationToken": "dFMb0z+PgpgdDmluhJ1LddFvSqZ/jCc8ptlAKulUj90jSqg==",
+      "payloadVersion": "3"
+    },
+    "endpoint": {
+      "scope": {
+        "type": "BearerToken",
+        "token": "access-token-from-Amazon"
+      },
+      "endpointId": "appliance-001"
+    },
+    "payload": {
+
+    }
+  }
+}

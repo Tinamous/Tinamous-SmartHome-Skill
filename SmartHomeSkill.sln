@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2026
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartHomeSkill", "Tinamous.SmartHomeSkill\SmartHomeSkill.csproj", "{1C152C6F-6E91-4A80-A194-8710310EAED2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{0D4F44B0-10DE-4D1D-8643-788057F213E8}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartHomeSkill.Tests", "Tinamous.SmartHomeSkill.Tests\SmartHomeSkill.Tests.csproj", "{EDA3D169-B9EF-4E65-8D86-F484AA142EC9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1C152C6F-6E91-4A80-A194-8710310EAED2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C152C6F-6E91-4A80-A194-8710310EAED2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C152C6F-6E91-4A80-A194-8710310EAED2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C152C6F-6E91-4A80-A194-8710310EAED2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EDA3D169-B9EF-4E65-8D86-F484AA142EC9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EDA3D169-B9EF-4E65-8D86-F484AA142EC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EDA3D169-B9EF-4E65-8D86-F484AA142EC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EDA3D169-B9EF-4E65-8D86-F484AA142EC9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {72CCFE1F-10C1-451F-BBF5-9780ACD2D29A}
+	EndGlobalSection
+EndGlobal

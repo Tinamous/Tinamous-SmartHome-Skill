@@ -1,0 +1,22 @@
+﻿{
+  "directive": {
+    "header": {
+      "namespace": "Alexa.PowerLevelController",
+      "name": "SetPowerLevel",
+      "messageId": "5f8a426e-01e4-4cc9-8b79-65f8bd0fd8a4",
+      "correlationToken": "dFMb0z+PgpgdDmluhJ1LddFvSqZ/jCc8ptlAKulUj90jSqg==",
+      "payloadVersion": "3"
+    },
+    "endpoint": {
+      "scope": {
+        "type": "BearerToken",
+        "token": "access-token-from-skill"
+      },
+      "endpointId": "appliance-001",
+      "cookie": {}
+    },
+    "payload": {
+      "powerLevel": 42
+    }
+  }
+}

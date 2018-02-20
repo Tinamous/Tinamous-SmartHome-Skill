@@ -1,0 +1,15 @@
+
+{
+    "region" : "eu-west-1",
+    "profile" : "Tinamous-Alexa-Skill",
+    "configuration" : "Debug",
+    "framework"     : "netcoreapp2.0",
+    "function-name" : "TinamousSmartHome",
+    "function-handler" : "Tinamous.SmartHome::Tinamous.SmartHome.SmartHomeSkill::FunctionHandler",
+    "function-memory-size" : 256,
+    "function-role"        : "arn:aws:iam::663539292784:role/service-role/AlexaService",
+    "function-timeout"     : 10,
+    "function-runtime"     : "dotnetcore2.0",
+    "tracing-mode"         : "PassThrough",
+    "environment-variables" : ""
+}
