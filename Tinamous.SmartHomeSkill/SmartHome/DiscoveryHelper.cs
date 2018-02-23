@@ -236,7 +236,7 @@ namespace Tinamous.SmartHome.SmartHome
             if (device.MetaTags != null)
             {
                 // Look for a meta tag labled as "Port n"
-                string portKey = string.Format("Port {0}", port);
+                string portKey = string.Format("Port-{0}", port);
                 var metaTag = device
                     .MetaTags
                     .FirstOrDefault(x => portKey.Equals(x.Name, StringComparison.InvariantCultureIgnoreCase));

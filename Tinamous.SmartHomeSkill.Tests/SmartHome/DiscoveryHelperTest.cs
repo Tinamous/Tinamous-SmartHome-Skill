@@ -23,8 +23,8 @@ namespace Tinamous.SmartHome.Tests.SmartHome
                     MetaTags = new List<MetaTagDto>
                     {
                         new MetaTagDto {Name = "PortCount", NumericValue = 4},
-                        new MetaTagDto {Name = "Port 1", Value="USB Light"},
-                        new MetaTagDto {Name = "Port 4", Value="ThingyStick"},
+                        new MetaTagDto {Name = "Port-1", Value="USB Light"},
+                        new MetaTagDto {Name = "Port-4", Value="ThingyStick"},
                     },
                     Tags = new List<string> {"MultiPort"},
                     DisplayName = "Test Device",
