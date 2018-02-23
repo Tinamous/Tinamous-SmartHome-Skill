@@ -4,6 +4,6 @@
     {
         public string Name { get; set; }
         public string Value { get; set; }
-        public int? NumericValue { get; set; }
+        public decimal? NumericValue { get; set; }
     }
 }

@@ -142,7 +142,7 @@ namespace Tinamous.SmartHome.SmartHome
         {
             List<Endpoint> endpoints = new List<Endpoint>();
 
-            int portCount = GetPortCount(device);
+            decimal portCount = GetPortCount(device);
 
             // Support a max of 16 ports for now...
             for (int port = 0; port < portCount; port++)
@@ -162,7 +162,7 @@ namespace Tinamous.SmartHome.SmartHome
             return endpoints;
         }
 
-        private int GetPortCount(DeviceDto device)
+        private decimal GetPortCount(DeviceDto device)
         {
             var portCountTag = device
                 .MetaTags

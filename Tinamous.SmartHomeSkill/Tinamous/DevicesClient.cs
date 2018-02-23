@@ -26,7 +26,7 @@ namespace Tinamous.SmartHome.Tinamous
         public async Task<List<DeviceDto>> GetDevicesAsync(string authToken)
         {
             var uri = string.Format(BaseUri, "");
-            uri += "?tagged[]=Alexa.SmartDevice"; // not implemented yet!
+            uri += "?tagged[]=Alexa.SmartDevice"; // not in production yet!
             List<DeviceDto> devices = await _restClient.GetAsJsonAsync<List<DeviceDto>>(authToken, uri);
 
             List<DeviceDto> filteredDevices = new List<DeviceDto>();
