@@ -102,15 +102,7 @@ namespace Tinamous.SmartHome.SmartHome
                                 Value = color, // TODO: Get the actual value back!
                                 TimeOfSample = DateTime.UtcNow,
                                 UncertaintyInMilliseconds = 600,
-                            },
-                            new ValueValueProperty
-                            {
-                                Namespace = "Alexa.EndpointHealth",
-                                Name = "connectivity",
-                                Value = new ValuePropertyValue {Value = "ON"},
-                                TimeOfSample = DateTime.UtcNow,
-                                UncertaintyInMilliseconds = 600,
-                            },
+                            }
                         },
                 },
                 Event = ConstructReponseEvent(request.Directive, "Response"),

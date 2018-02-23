@@ -62,10 +62,10 @@ namespace Tinamous.SmartHome.Tests.SmartHome
             Assert.AreEqual("Device-Id", endpoints[0].EndpointId, "endpoints[0].EndpointId");
 
             Assert.AreEqual("USB Light", endpoints[1].FriendlyName, "endpoints[1].FriendlyName");
-            Assert.AreEqual("Device-Id*port-1*", endpoints[1].EndpointId, "endpoints[1].EndpointId");
+            Assert.AreEqual("Device-Id#port-1#", endpoints[1].EndpointId, "endpoints[1].EndpointId");
 
             Assert.AreEqual("ThingyStick", endpoints[2].FriendlyName, "endpoints[2].FriendlyName");
-            Assert.AreEqual("Device-Id*port-4*", endpoints[2].EndpointId, "endpoints[2].EndpointId");
+            Assert.AreEqual("Device-Id#port-4#", endpoints[2].EndpointId, "endpoints[2].EndpointId");
         }
 
         [Test]

@@ -10,8 +10,6 @@ namespace Tinamous.SmartHome.Models
         [JsonProperty("endpointId")]
         public string EndpointId { get; set; }
 
-        // And cookie which we'll ignore now...
-
         [JsonProperty("scope")]
         public Scope Scope { get; set; }
 

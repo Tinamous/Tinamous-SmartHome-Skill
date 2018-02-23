@@ -70,18 +70,6 @@ namespace Tinamous.SmartHome.SmartHome
             LambdaLogger.Log("Turn On");
             string token = request.Directive.Endpoint.Scope.Token;
 
-            // Bit for debugging for a second...
-
-            if (request.Directive.Endpoint.Cookie != null)
-            {
-                LambdaLogger.Log("Endpoint cookie set");
-                LambdaLogger.Log("Endpoint cookie Username: " + request.Directive.Endpoint.Cookie.Username);
-            }
-            else
-            {
-                LambdaLogger.Log("Endpoint cookie was null");
-            }
-
             await SendDeviceStatusMessage(request, token, "Turn On");
 
             // TODO: Can (shouldn't) these come from the state report
@@ -101,16 +89,8 @@ namespace Tinamous.SmartHome.SmartHome
                             Value = "ON",
                             TimeOfSample = DateTime.UtcNow,
                             UncertaintyInMilliseconds = 600,
-                        },
-                        new ValueValueProperty
-                        {
-                            Namespace = "Alexa.EndpointHealth",
-                            Name = "connectivity",
-                            Value = new ValuePropertyValue {Value = "ON"},
-                            TimeOfSample = DateTime.UtcNow,
-                            UncertaintyInMilliseconds = 600,
-                        },
-                    },
+                        }
+                    }
                 },
                 Event = ConstructReponseEvent(request.Directive, "Response"),
             };
@@ -137,15 +117,7 @@ namespace Tinamous.SmartHome.SmartHome
                             Value = "OFF",
                             TimeOfSample = DateTime.UtcNow,
                             UncertaintyInMilliseconds = 600,
-                        },
-                        new ValueValueProperty
-                        {
-                            Namespace = "Alexa.EndpointHealth",
-                            Name = "connectivity",
-                            Value = new ValuePropertyValue {Value = "ON"},
-                            TimeOfSample = DateTime.UtcNow,
-                            UncertaintyInMilliseconds = 600,
-                        },
+                        }
                     },
                 },
                 Event = ConstructReponseEvent(request.Directive, "Response"),

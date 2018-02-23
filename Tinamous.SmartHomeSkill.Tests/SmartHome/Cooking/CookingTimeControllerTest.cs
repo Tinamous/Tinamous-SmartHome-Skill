@@ -94,6 +94,10 @@ namespace Tinamous.SmartHome.Tests.SmartHome.Cooking
                         Scope = new Scope
                         {
                             Token = "Tokenx"
+                        },
+                        Cookie = new Cookie
+                        {
+                            Username = "Switch",
                         }
                     }
                 }

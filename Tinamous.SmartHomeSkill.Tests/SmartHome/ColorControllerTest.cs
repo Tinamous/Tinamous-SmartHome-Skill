@@ -99,6 +99,10 @@ namespace Tinamous.SmartHome.Tests.SmartHome
                         Scope = new Scope
                         {
                             Token = "Tokenx"
+                        },
+                        Cookie = new Cookie
+                        {
+                            Username = "Switch",
                         }
                     }
                 }

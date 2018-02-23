@@ -89,6 +89,16 @@ namespace Tinamous.SmartHome.SmartHome
                 Event = ConstructReponseEvent(requestDirective, "StateReport"),
             };
 
+            // Always add endpoint health...
+            reponse.Context.Properties.Add(new ValueValueProperty
+            {
+                Namespace = "Alexa.EndpointHealth",
+                Name = "connectivity",
+                Value = new ValuePropertyValue {Value = "ON"},
+                TimeOfSample = DateTime.UtcNow,
+                UncertaintyInMilliseconds = 600,
+            });
+
             var deviceAndPort = new DeviceAndPort(requestDirective.Endpoint.EndpointId);
             var device = await _devicesClient.GetDeviceAsync(token, deviceAndPort.Id);
 

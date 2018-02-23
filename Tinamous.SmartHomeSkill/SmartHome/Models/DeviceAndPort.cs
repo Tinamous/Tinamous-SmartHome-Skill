@@ -7,7 +7,7 @@ namespace Tinamous.SmartHome.SmartHome.Models
     {
         public DeviceAndPort(string endpointId)
         {
-            string[] idAndPort = endpointId.Split("*", StringSplitOptions.RemoveEmptyEntries);
+            string[] idAndPort = endpointId.Split("#", StringSplitOptions.RemoveEmptyEntries);
             Id = idAndPort[0];
             
             if (idAndPort.Length > 1)
@@ -34,7 +34,7 @@ namespace Tinamous.SmartHome.SmartHome.Models
         {
             if (!string.IsNullOrEmpty(Port))
             {
-                return string.Format("{0}*{1}*", Id, Port);
+                return string.Format("{0}#{1}#", Id, Port);
             }
             return Id;
         }

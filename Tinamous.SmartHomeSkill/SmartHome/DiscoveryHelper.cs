@@ -131,6 +131,8 @@ namespace Tinamous.SmartHome.SmartHome
                     response.Event.Payload.Endpoints.AddRange(CreateMultiDeviceEndpoint(device));
                 }
             }
+
+            LambdaLogger.Log("Found " + response.Event.Payload.Endpoints.Count + " devices.");
         }
 
         /// <summary>
@@ -156,7 +158,7 @@ namespace Tinamous.SmartHome.SmartHome
                 }
                 else
                 {
-                    LambdaLogger.Log("Did not find name for port " + portNumber);
+                    LambdaLogger.Log("**** Did not find name for port " + portNumber);
                 }
             }
             return endpoints;
@@ -205,6 +207,8 @@ namespace Tinamous.SmartHome.SmartHome
                 Cookie = new Cookie
                 {
                     Username = device.UserName,
+                    //PortNumber = port,
+                    DeviceId = device.Id, 
                 },
                 Capabilities = new List<Capability>
                 {
@@ -219,7 +223,7 @@ namespace Tinamous.SmartHome.SmartHome
 
             AddDisplayCategories(device, endpoint);
 
-            AddDeviceCapabilities(device, endpoint);
+            AddDeviceCapabilities(device, endpoint, deviceAndPort.Port);
 
             return endpoint;
         }
@@ -264,59 +268,67 @@ namespace Tinamous.SmartHome.SmartHome
             }
         }
 
-        private void AddDeviceCapabilities(DeviceDto device, Endpoint endpoint)
+        private void AddDeviceCapabilities(DeviceDto device, Endpoint endpoint, string port)
         {
+            //// todo, add test for this.
+            //endpoint.Capabilities.Add(new Capability
+            //{
+            //    Type = "AlexaInterface",
+            //    Interface = "Alexa",
+            //    Version = "3",
+            //});
+
             // Populate the Supported Interfaces based on the tags on the device.
             foreach (string supportedInterface in SupportedInterfaces)
             {
                 if (device.Tags.Contains(supportedInterface))
                 {
-                    endpoint.Capabilities.Add(CreateInterfaceCapability(supportedInterface, device));
+                    endpoint.Capabilities.Add(CreateInterfaceCapability(supportedInterface, device, port));
                 }
             }
 
             // Always add the endpoint health category.
-            endpoint.Capabilities.Add(CreateInterfaceCapability("Alexa.EndpointHealth", device));
+            endpoint.Capabilities.Add(CreateInterfaceCapability("Alexa.EndpointHealth", device, ""));
         }
 
-        private Capability CreateInterfaceCapability(string supportedInterface, DeviceDto device)
+        private Capability CreateInterfaceCapability(string supportedInterface, DeviceDto device, string port)
         {
             var capability = CreateCapability(supportedInterface);
 
             switch (supportedInterface)
             {
                 case "Alexa.TemperatureSensor":
-                    PopulateTemperatureSensorCapability(capability, device);
+                    PopulateTemperatureSensorCapability(capability, device, port);
                     break;
                 case "Alexa.PercentageController":
-                    PopulatePercentageControllerCapability(capability, device);
+                    PopulatePercentageControllerCapability(capability, device, port);
                     break;
                 case "Alexa.BrightnessController":
-                    PopulateBrightnessControllerCapability(capability, device);
+                    PopulateBrightnessControllerCapability(capability, device, port);
                     break;
                 case "Alexa.ColorController":
-                    PopulateColorControllerCapability(capability, device);
+                    PopulateColorControllerCapability(capability, device, port);
                     break;
                 case "Alexa.PowerController":
-                    PopulatePowerControllerCapability(capability, device);
+                    PopulatePowerControllerCapability(capability, device, port);
                     break;
                 case "Alexa.PowerLevelController":
-                    PopulatePowerLevelControllerCapability(capability, device);
+                    PopulatePowerLevelControllerCapability(capability, device, port);
                     break;
                 case "Alexa.LockController":
-                    PopulateLockControllerCapability(capability, device);
+                    PopulateLockControllerCapability(capability, device, port);
                     break;
                 case "Alexa.EndpointHealth":
-                    PopulateEndpointHealthCapability(capability, device);
+                    PopulateEndpointHealthCapability(capability);
                     break;
                 case "Alexa.SceneController":
-                    PopulateSceneControllerCapability(capability, device);
+                    PopulateSceneControllerCapability(capability, device, port);
                     break;
                 case "Alexa.ThermostatController":
-                    PopulateThermostatControllerCapability(capability, device);
+                    PopulateThermostatControllerCapability(capability, device, port);
                     break;
                 case "Alexa.Cooking.TimeController":
-                    PopulateCookingTimeControllerCapability(capability, device);
+                    PopulateCookingTimeControllerCapability(capability, device, port);
                     break;
                 default:
                     LambdaLogger.Log("Missing support for supported capability: " + supportedInterface);
@@ -348,9 +360,9 @@ namespace Tinamous.SmartHome.SmartHome
         /// </summary>
         /// <param name="capability"></param>
         /// <param name="device"></param>
-        private void PopulatePowerControllerCapability(Capability capability, DeviceDto device)
+        private void PopulatePowerControllerCapability(Capability capability, DeviceDto device, string port)
         {
-            PopulatePropertyIfSupported(capability, device, "powerState");
+            PopulatePropertyIfSupported(capability, device, "powerState", port);
         }
 
         /// <summary>
@@ -358,9 +370,9 @@ namespace Tinamous.SmartHome.SmartHome
         /// </summary>
         /// <param name="capability"></param>
         /// <param name="device"></param>
-        private void PopulateBrightnessControllerCapability(Capability capability, DeviceDto device)
+        private void PopulateBrightnessControllerCapability(Capability capability, DeviceDto device, string port)
         {
-            PopulatePropertyIfSupported(capability, device, "brightness");
+            PopulatePropertyIfSupported(capability, device, "brightness", port);
         }
 
         /// <summary>
@@ -368,9 +380,9 @@ namespace Tinamous.SmartHome.SmartHome
         /// </summary>
         /// <param name="capability"></param>
         /// <param name="device"></param>
-        private void PopulatePercentageControllerCapability(Capability capability, DeviceDto device)
+        private void PopulatePercentageControllerCapability(Capability capability, DeviceDto device, string port)
         {
-            PopulatePropertyIfSupported(capability, device, "percentage");
+            PopulatePropertyIfSupported(capability, device, "percentage", port);
         }
 
         /// <summary>
@@ -378,12 +390,12 @@ namespace Tinamous.SmartHome.SmartHome
         /// </summary>
         /// <param name="capability"></param>
         /// <param name="device"></param>
-        private void PopulateThermostatControllerCapability(Capability capability, DeviceDto device)
+        private void PopulateThermostatControllerCapability(Capability capability, DeviceDto device, string port)
         {
-            PopulatePropertyIfSupported(capability, device, "lowerSetpoint");
-            PopulatePropertyIfSupported(capability, device, "targetSetpoint");
-            PopulatePropertyIfSupported(capability, device, "upperSetpoint");
-            PopulatePropertyIfSupported(capability, device, "thermostatMode");
+            PopulatePropertyIfSupported(capability, device, "lowerSetpoint", port);
+            PopulatePropertyIfSupported(capability, device, "targetSetpoint", port);
+            PopulatePropertyIfSupported(capability, device, "upperSetpoint", port);
+            PopulatePropertyIfSupported(capability, device, "thermostatMode", port);
         }
 
         /// <summary>
@@ -391,9 +403,9 @@ namespace Tinamous.SmartHome.SmartHome
         /// </summary>
         /// <param name="capability"></param>
         /// <param name="device"></param>
-        private void PopulateTemperatureSensorCapability(Capability capability, DeviceDto device)
+        private void PopulateTemperatureSensorCapability(Capability capability, DeviceDto device, string port)
         {
-            PopulatePropertyIfSupported(capability, device, "temperature");
+            PopulatePropertyIfSupported(capability, device, "temperature", port);
         }
 
         /// <summary>
@@ -401,9 +413,9 @@ namespace Tinamous.SmartHome.SmartHome
         /// </summary>
         /// <param name="capability"></param>
         /// <param name="device"></param>
-        private void PopulateLockControllerCapability(Capability capability, DeviceDto device)
+        private void PopulateLockControllerCapability(Capability capability, DeviceDto device, string port)
         {
-            PopulatePropertyIfSupported(capability, device, "lockState");
+            PopulatePropertyIfSupported(capability, device, "lockState", port);
         }
 
         /// <summary>
@@ -411,9 +423,9 @@ namespace Tinamous.SmartHome.SmartHome
         /// </summary>
         /// <param name="capability"></param>
         /// <param name="device"></param>
-        private void PopulateColorControllerCapability(Capability capability, DeviceDto device)
+        private void PopulateColorControllerCapability(Capability capability, DeviceDto device, string port)
         {
-            PopulatePropertyIfSupported(capability, device, "color");
+            PopulatePropertyIfSupported(capability, device, "color", port);
         }
 
         /// <summary>
@@ -421,7 +433,7 @@ namespace Tinamous.SmartHome.SmartHome
         /// </summary>
         /// <param name="capability"></param>
         /// <param name="device"></param>
-        private void PopulateSceneControllerCapability(Capability capability, DeviceDto device)
+        private void PopulateSceneControllerCapability(Capability capability, DeviceDto device, string port)
         {
             // No supported properties...
             //PopulatePropertyIfSupported(capability, device, "....");
@@ -436,12 +448,12 @@ namespace Tinamous.SmartHome.SmartHome
         /// </summary>
         /// <param name="capability"></param>
         /// <param name="device"></param>
-        private void PopulatePowerLevelControllerCapability(Capability capability, DeviceDto device)
+        private void PopulatePowerLevelControllerCapability(Capability capability, DeviceDto device, string port)
         {
-            PopulatePropertyIfSupported(capability, device, "powerLevel");
+            PopulatePropertyIfSupported(capability, device, "powerLevel", port);
         }
 
-        private void PopulateCookingTimeControllerCapability(Capability capability, DeviceDto device)
+        private void PopulateCookingTimeControllerCapability(Capability capability, DeviceDto device, string port)
         {
             capability.Properties.Supported.Add(new Supported { Name = "cookTime" });
             capability.Properties.Supported.Add(new Supported { Name = "powerLevel" });
@@ -455,23 +467,46 @@ namespace Tinamous.SmartHome.SmartHome
             };
         }
 
-        private void PopulatePropertyIfSupported(Capability capability, DeviceDto device, string property)
+        private FieldDescriptorDto GetFieldDescriptor(DeviceDto device, string fieldName, string port)
         {
-            // Ensire device has a field named, labeled or tagged with the property name
-            if (device.HasField(property))
+            if (string.IsNullOrEmpty(port))
             {
-                LambdaLogger.Log("Device '" + device.DisplayName + "' supports property: " + property);
+                return device.GetField(fieldName);
+            }
+
+            // Port has a space in it.
+            // e.g. powerState and powerState-port-1
+            string fieldAndPortName = string.Format("{0}-{1}", fieldName, port);
+            FieldDescriptorDto field = device.GetField(fieldAndPortName);
+
+            if (field != null)
+            {
+                return field;
+            }
+            return GetFieldDescriptor(device, fieldName, null);
+        }
+
+        private void PopulatePropertyIfSupported(Capability capability, DeviceDto device, string property, string port)
+        {
+            var field = GetFieldDescriptor(device, property, port);
+
+            // Ensire device has a field named, labeled or tagged with the property name
+            if (field!=null)
+            {
+                LambdaLogger.Log("Device '" + device.DisplayName + "' Port: " + port + " supports property: " + property);
                 capability.Properties.Supported.Add(new Supported { Name = property });
             }
             else
             {
-                LambdaLogger.Log("Device '" + device.DisplayName + "' missing capability property: " + property);
+                LambdaLogger.Log("Device '" + device.DisplayName + "' Port: " + port + " missing capability property: " + property);
             }
         }
 
-        private void PopulateEndpointHealthCapability(Capability capability, DeviceDto device)
+        private void PopulateEndpointHealthCapability(Capability capability)
         {
-            capability.Properties.Supported.Add(new Supported { Name = "connectivity" });
+            capability.Properties.Supported.Add(new Supported
+            {
+                Name = "connectivity"});
         }
 
         private DisplayCategories GetDisplayCategory(string tag)

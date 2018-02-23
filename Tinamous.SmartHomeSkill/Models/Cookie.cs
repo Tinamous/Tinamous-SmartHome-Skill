@@ -13,6 +13,15 @@ namespace Tinamous.SmartHome.Models
         [JsonProperty("username")]
         public string Username { get; set; }
 
+        //[JsonProperty("portNumber")]
+        //public int? PortNumber { get; set; }
+
+        /// <summary>
+        /// The device id (removed from endpointId)
+        /// </summary>
+        [JsonProperty("deviceId")]
+        public string DeviceId { get; set; }
+
         // TODO: Add port?, actual deviceId?, Display name, other???
     }
 }

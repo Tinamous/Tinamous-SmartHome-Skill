@@ -82,13 +82,15 @@ namespace Tinamous.SmartHome.SmartHome
         {
             // Get the device we are targetting.
             DeviceAndPort deviceAndPort = request.Directive.Endpoint.GetDeviceAndPort();
-            DeviceDto device = await _devicesClient.GetDeviceAsync(token, deviceAndPort.Id);
+            //DeviceDto device = await _devicesClient.GetDeviceAsync(token, deviceAndPort.Id);
+
+            string username = request.Directive.Endpoint.Cookie.Username;
 
             // Ideall we would just send a named command "Turn On"
             // once the commands interface in inplace......
 
             // For now, use a status message.
-            string message = string.Format("@{0} {1} {2}", device.UserName, messageFragment, deviceAndPort.Port);
+            string message = string.Format("@{0} {1} {2}", username, messageFragment, deviceAndPort.Port);
             message = message.Trim();
             await _statusClient.PostStatusMessageAsync(token, message);
         }
