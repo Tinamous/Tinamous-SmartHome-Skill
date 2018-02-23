@@ -8,6 +8,6 @@ namespace Tinamous.SmartHome.Models.PropertyModels
         /// Might be PropertyValue (25.0, CELSIUS), or string ("HEAT")
         /// </summary>
         [JsonProperty("value")]
-        public NumericPropertyValue Value { get; set; }
+        public TemperaturePropertyValue Value { get; set; }
     }
 }

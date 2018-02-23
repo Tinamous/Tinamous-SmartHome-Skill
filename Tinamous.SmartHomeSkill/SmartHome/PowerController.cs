@@ -4,6 +4,9 @@ using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Tinamous.SmartHome.Models;
 using Tinamous.SmartHome.Models.PropertyModels;
+using Tinamous.SmartHome.Tinamous;
+using Tinamous.SmartHome.Tinamous.Dtos;
+using Tinamous.SmartHome.Tinamous.Interfaces;
 
 namespace Tinamous.SmartHome.SmartHome
 {
@@ -11,35 +14,65 @@ namespace Tinamous.SmartHome.SmartHome
     /// Handled Alexa Power Control 
     /// </summary>
     /// <see cref="https://developer.amazon.com/docs/device-apis/alexa-powercontroller.html"/>
-    public class PowerController : AlexaInterfaceControllerBase
+    public class PowerController : AlexaSmartHomeInterfaceControllerBase
     {
-        public Task<PowerControlResponse> HandlePowerControl(SmartHomeRequest request, ILambdaContext context)
+        public PowerController(IDevicesClient devicesClient, IMeasurementsClient measurementsClient, IStatusClient statusClient)
+            : base(devicesClient, measurementsClient, statusClient)
+        { }
+
+        public override Task<object> HandleAlexaRequest(SmartHomeRequest request, ILambdaContext context)
         {
-            try
+            switch (request.Directive.Header.Name)
             {
-                switch (request.Directive.Header.Name)
-                {
-                    case "TurnOn":
-                        return HandleTurnOn(request, context);
-                    case "TurnOff":
-                        return HandleTurnOff(request, context);
-                    default:
-                        return null;
-                }
-            }
-            catch (Exception ex)
-            {
-                LambdaLogger.Log("Exception in power control. " + ex.ToString());
-                throw;
+                case "TurnOn":
+                    return HandleTurnOn(request, context);
+                case "TurnOff":
+                    return HandleTurnOff(request, context);
+                default:
+                    return NotSupportedDirective(request.Directive);
             }
         }
 
-        private async Task<PowerControlResponse> HandleTurnOn(SmartHomeRequest request, ILambdaContext context)
+        /// <summary>
+        /// Create the properties for the StateReport
+        /// </summary>
+        /// <param name="token"></param>
+        /// <param name="device"></param>
+        /// <returns></returns>
+        public override async Task<List<Property>> CreateProperties(string token, DeviceDto device, string port)
+        {
+            LambdaLogger.Log("Power StateReport");
+
+            List<Property> properties = new List<Property>();
+
+            FieldValueDto value = await GetFieldValue(token, device, "powertState", port);
+
+            string stringValue = GetOnOff(value);
+
+            if (value != null)
+            {
+                var temperatureProperty = new StringValueProperty
+                {
+                    Namespace = "Alexa.PowerController",
+                    Name = "powerState",
+                    Value = stringValue,
+                    TimeOfSample = DateTime.UtcNow,
+                    UncertaintyInMilliseconds = 600
+                };
+                properties.Add(temperatureProperty);
+            }
+
+            return properties;
+        }
+
+        private async Task<object> HandleTurnOn(SmartHomeRequest request, ILambdaContext context)
         {
             LambdaLogger.Log("Turn On");
             string token = request.Directive.Endpoint.Scope.Token;
 
             await SendDeviceStatusMessage(request, token, "Turn On");
+
+            // TODO: Can (shouldn't) these come from the state report
 
             // When the power state changes, send a state report with a powerState property.
             // Assume it worked.......
@@ -71,7 +104,7 @@ namespace Tinamous.SmartHome.SmartHome
             };
         }
 
-        private async Task<PowerControlResponse> HandleTurnOff(SmartHomeRequest request, ILambdaContext context)
+        private async Task<object> HandleTurnOff(SmartHomeRequest request, ILambdaContext context)
         {
             LambdaLogger.Log("Turn Off");
 
@@ -108,5 +141,24 @@ namespace Tinamous.SmartHome.SmartHome
         }
 
 
+        private static string GetOnOff(FieldValueDto value)
+        {
+            if (value.bv.HasValue)
+            {
+                return value.bv.Value ? "ON" : "OFF";
+            }
+
+            if (string.IsNullOrWhiteSpace(value.sv))
+            {
+                return value.sv;
+            }
+
+            if (value.v.HasValue)
+            {
+                return value.v.Value > 0 ? "ON" : "OFF";
+            }
+
+            return null;
+        }
     }
 }

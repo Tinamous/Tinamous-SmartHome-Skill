@@ -1,12 +1,22 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Tinamous.SmartHome.Tinamous.Dtos;
+using Tinamous.SmartHome.Tinamous.Interfaces;
 
 namespace Tinamous.SmartHome.Tinamous
 {
-    public class DevicesClient : RestClientBase
+    /// <summary>
+    /// Interacts with the Tinamous.com api to get the devices for the account
+    /// </summary>
+    public class DevicesClient : IDevicesClient
     {
+        private readonly ITinamousRestClient _restClient;
         private const string BaseUri = "api/v1/Devices/{0}";
+
+        public DevicesClient(ITinamousRestClient restClient)
+        {
+            _restClient = restClient;
+        }
 
         /// <summary>
         /// Get a list of the devices that are tagged with "Alexa.SmartDevice"
@@ -16,7 +26,8 @@ namespace Tinamous.SmartHome.Tinamous
         public async Task<List<DeviceDto>> GetDevicesAsync(string authToken)
         {
             var uri = string.Format(BaseUri, "");
-            List<DeviceDto> devices = await GetAsJsonAsync<List<DeviceDto>>(authToken, uri);
+            uri += "?tagged[]=Alexa.SmartDevice"; // not implemented yet!
+            List<DeviceDto> devices = await _restClient.GetAsJsonAsync<List<DeviceDto>>(authToken, uri);
 
             List<DeviceDto> filteredDevices = new List<DeviceDto>();
 
@@ -53,7 +64,7 @@ namespace Tinamous.SmartHome.Tinamous
             }
 
             var uri = string.Format(BaseUri, id);
-            return GetAsJsonAsync<DeviceDto>(authToken, uri);
+            return _restClient.GetAsJsonAsync<DeviceDto>(authToken, uri);
         }
 
     }

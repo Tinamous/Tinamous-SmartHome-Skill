@@ -26,6 +26,13 @@ namespace Tinamous.SmartHome.Tinamous.Extension
 
             foreach (var deviceFieldDescriptor in device.FieldDescriptors)
             {
+                // Check tags.
+                deviceFieldDescriptor.Tags = deviceFieldDescriptor.Tags ?? new List<string>();
+                if (deviceFieldDescriptor.Tags.Any(tag => fieldNameOrTag.Equals(tag, StringComparison.InvariantCultureIgnoreCase)))
+                {
+                    return deviceFieldDescriptor;
+                }
+
                 // Check field name
                 if (fieldNameOrTag.Equals(deviceFieldDescriptor.Name, StringComparison.InvariantCultureIgnoreCase))
                 {
@@ -34,13 +41,6 @@ namespace Tinamous.SmartHome.Tinamous.Extension
 
                 // Check field label
                 if (fieldNameOrTag.Equals(deviceFieldDescriptor.Label, StringComparison.InvariantCultureIgnoreCase))
-                {
-                    return deviceFieldDescriptor;
-                }
-
-                // Check tags.
-                deviceFieldDescriptor.Tags = deviceFieldDescriptor.Tags ?? new List<string>();
-                if (deviceFieldDescriptor.Tags.Any(tag => fieldNameOrTag.Equals(tag, StringComparison.InvariantCultureIgnoreCase)))
                 {
                     return deviceFieldDescriptor;
                 }

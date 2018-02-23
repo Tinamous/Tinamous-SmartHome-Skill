@@ -2,40 +2,47 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
-using Tinamous.SmartHome.Tinamous.Extension;
 using Tinamous.SmartHome.Models;
 using Tinamous.SmartHome.Models.PropertyModels;
+using Tinamous.SmartHome.SmartHome.Models;
 using Tinamous.SmartHome.Tinamous;
 using Tinamous.SmartHome.Tinamous.Dtos;
+using Tinamous.SmartHome.Tinamous.Interfaces;
 
 namespace Tinamous.SmartHome.SmartHome
 {
-    public class StateReportHelper
+    public class StateReportHelper : IAlexaSmartHomeController
     {
-        private static List<string> _supportedInterfaces = new List<string>
+        private readonly IDevicesClient _devicesClient;
+
+        /// <summary>
+        /// Interfaces that are supported by this skill at presnet.
+        /// </summary>
+        private static readonly List<string> SupportedInterfaces = new List<string>
         {
             "Alexa.TemperatureSensor",
-            //"Alexa.PercentageController",
-            //"Alexa.BrightnessController",
-            //"/Alexa.ColorController",
-            //"Alexa.PowerController",
-            //"Alexa.PowerLevelController",
+            "Alexa.PercentageController",
+            "Alexa.BrightnessController",
+            "Alexa.ColorController",
+            "Alexa.PowerController",
+            "Alexa.PowerLevelController",
+            // Not implemented...
             //"Alexa.LockController",
             //"Alexa.SceneController",
             //"Alexa.ThermostatController"
         };
 
-        public async Task<StateReportResponse> HandleAlexaRequest(SmartHomeRequest request, ILambdaContext context)
+        public StateReportHelper(IDevicesClient devicesClient)
+        {
+            _devicesClient = devicesClient;
+        }
+
+        public async Task<object> HandleAlexaRequest(SmartHomeRequest request, ILambdaContext context)
         {
             // Not available for ReportState
             if (request.Directive.Endpoint == null)
             {
                 throw new NullReferenceException("Directive.Endpoint is null");
-            }
-
-            if (request.Directive.Endpoint.Scope != null)
-            {
-                //LambdaLogger.Log("Token Name: " + request.Directive.Endpoint.Scope.Token);
             }
 
             switch (request.Directive.Header.Name)
@@ -49,6 +56,22 @@ namespace Tinamous.SmartHome.SmartHome
             }
         }
 
+        public Task<List<Property>> CreateProperties(string token, DeviceDto device, string port)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<List<Property>> CreateProperties(string supportedInterface, string token, DeviceDto device, string port)
+        {
+            IAlexaSmartHomeController controller = ControllerFactory.GetController(supportedInterface, new RestClient());
+            return controller.CreateProperties(token, device, port);
+        }
+
+        /// <summary>
+        ///  See https://github.com/alexa/alexa-smarthome/blob/master/sample_messages/StateReport/StateReport.json
+        /// </summary>
+        /// <param name="requestDirective"></param>
+        /// <returns></returns>
         private async Task<StateReportResponse> BuildDeviceStateReport(Directive requestDirective)
         {
             string token = requestDirective.Endpoint.Scope.Token;
@@ -57,7 +80,6 @@ namespace Tinamous.SmartHome.SmartHome
                 throw new ArgumentException("Missing token");
             }
 
-            // See https://github.com/alexa/alexa-smarthome/blob/master/sample_messages/StateReport/StateReport.json
             var reponse = new StateReportResponse
             {
                 Context = new Context
@@ -67,19 +89,22 @@ namespace Tinamous.SmartHome.SmartHome
                 Event = ConstructReponseEvent(requestDirective, "StateReport"),
             };
 
-            DevicesClient devicesClient = new DevicesClient();
-            var device = await devicesClient.GetDeviceAsync(token, requestDirective.Endpoint.EndpointId);
+            var deviceAndPort = new DeviceAndPort(requestDirective.Endpoint.EndpointId);
+            var device = await _devicesClient.GetDeviceAsync(token, deviceAndPort.Id);
 
             if (device == null)
             {
                 return reponse;
             }
 
-            foreach (var supportedInterface in _supportedInterfaces)
+            foreach (var supportedInterface in SupportedInterfaces)
             {
                 if (device.Tags.Contains(supportedInterface))
                 {
-                    List<Property> properties = await CreateInterfaceProperties(token, device, supportedInterface);
+                    // This will itterate through the appropriate controllers
+                    // and get them to create the required properties for the interface
+                    // they support.
+                    List<Property> properties = await CreateProperties(supportedInterface, token, device, deviceAndPort.Port);
                     reponse.Context.Properties.AddRange(properties);
                 }
             }
@@ -87,99 +112,6 @@ namespace Tinamous.SmartHome.SmartHome
             return reponse;
         }
 
-        private Task<List<Property>> CreateInterfaceProperties(string token, DeviceDto device, string supportedInterface)
-        {
-            switch (supportedInterface)
-            {
-                case "Alexa.TemperatureSensor":
-                    return CreateTemperatureSensorProperties(supportedInterface, token, device);
-                //case "Alexa.PercentageController":
-                case "Alexa.BrightnessController":
-                    return CreateBrightnessProperties(supportedInterface, token, device);
-                //case "Alexa.ColorController":
-                //case "Alexa.PowerController":
-                //case "Alexa.PowerLevelController":
-                //case "Alexa.LockController":
-                //case "Alexa.SceneController":
-                //case "Alexa.ThermostatController":
-                default:
-                    return Task.FromResult(new List<Property>());
-            }
-        }
-
-        private async Task<List<Property>> CreateTemperatureSensorProperties(string supportedInterface, string token, DeviceDto device)
-        {
-            LambdaLogger.Log("Temperature StateReport");
-
-            List<Property> properties = new List<Property>();
-
-            FieldValueDto value = await GetFieldValue(token, device, "temperature");
-
-            if (value != null)
-            {
-                var temperatureProperty = new NumericValueWithUnitsProperty
-                {
-                    Namespace = supportedInterface,
-                    Name = "temperature",
-                    Value = new NumericPropertyValue
-                    {
-                        // TODO: Support °F
-                        Scale = "CELSIUS",
-                        Value = value.v,
-                    },
-                    TimeOfSample = DateTime.UtcNow,
-                    UncertaintyInMilliseconds = 600
-                };
-                properties.Add(temperatureProperty);
-            }
-
-            return properties;
-        }
-
-        private async Task<List<Property>> CreateBrightnessProperties(string supportedInterface, string token, DeviceDto device)
-        {
-            LambdaLogger.Log("Brightness StateReport");
-
-            List<Property> properties = new List<Property>();
-
-            FieldValueDto value = await GetFieldValue(token, device, "brightness");
-
-            if (value != null)
-            {
-                var temperatureProperty = new IntValueProperty
-                {
-                    Namespace = supportedInterface,
-                    Name = "brightness",
-                    Value = Convert.ToInt32(value.v),
-                    TimeOfSample = DateTime.UtcNow,
-                    UncertaintyInMilliseconds = 600
-                };
-                properties.Add(temperatureProperty);
-            }
-
-            return properties;
-        }
-
-        private static async Task<FieldValueDto> GetFieldValue(string token, DeviceDto device, string fieldName)
-        {
-            FieldDescriptorDto field = device.GetField(fieldName);
-            if (field == null)
-            {
-                LambdaLogger.Log("Did not find required field '" + fieldName + "' for device: " + device.DisplayName);
-                return null;
-            }
-
-            LambdaLogger.Log("Getting field '" + fieldName + "' value from device: " + device.DisplayName);
-            MeasurementsClient measurementsClient = new MeasurementsClient();
-            var value = await measurementsClient.GetFieldValueAsync(token, device.Id, field);
-            if (value == null)
-            {
-                LambdaLogger.Log("Did not find field '" + fieldName + "' value for device: " + device.DisplayName);
-                return null;
-            }
-
-            return value;
-        }
 
         private Event ConstructReponseEvent(Directive directive, string name)
         {

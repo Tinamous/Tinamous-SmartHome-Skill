@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 
 namespace Tinamous.SmartHome.Tinamous
 {
-    public abstract class RestClientBase
+    public class RestClient : ITinamousRestClient
     {
         /// <summary>
         /// Allow upto 30 second by default (EasyNetQ will usually fail at that point).
@@ -16,7 +16,7 @@ namespace Tinamous.SmartHome.Tinamous
         private readonly Uri _siteUri = new Uri("https://api.tinamous.com");
         //private readonly Uri _siteUri = new Uri("http://dev.localhost:20866");
 
-        protected async Task Post<T>(string token, string apiUri, T t)
+        public async Task Post<T>(string token, string apiUri, T t)
         {
             var uri = new Uri(_siteUri, apiUri);
 
@@ -41,7 +41,7 @@ namespace Tinamous.SmartHome.Tinamous
             }
         }
 
-        protected async Task<T> GetAsJsonAsync<T>(string token, string apiUri)
+        public async Task<T> GetAsJsonAsync<T>(string token, string apiUri)
         {
             var uri = new Uri(_siteUri, apiUri);
 
@@ -65,7 +65,7 @@ namespace Tinamous.SmartHome.Tinamous
                 return await response.Content.ReadAsAsync<T>();
             }
         }
-  
+
         private static AuthenticationHeaderValue CreateBearerHeader(string token)
         {
             return new AuthenticationHeaderValue("bearer", token);

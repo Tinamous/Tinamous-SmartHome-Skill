@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 
 namespace Tinamous.SmartHome.Models
 {
-    public class NumericPropertyValue
+    public class TemperaturePropertyValue
     {
         [JsonProperty("value")]
         public float Value { get; set; }

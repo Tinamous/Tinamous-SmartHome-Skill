@@ -5,18 +5,22 @@ using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Tinamous.SmartHome.Tinamous.Extension;
 using Tinamous.SmartHome.Models;
-using Tinamous.SmartHome.Tinamous;
+using Tinamous.SmartHome.Models.PropertyModels;
+using Tinamous.SmartHome.SmartHome.Models;
 using Tinamous.SmartHome.Tinamous.Dtos;
+using Tinamous.SmartHome.Tinamous.Interfaces;
 
 namespace Tinamous.SmartHome.SmartHome
 {
-    public class DiscoveryHelper
+    public class DiscoveryHelper : IAlexaSmartHomeController
     {
+        private readonly IDevicesClient _devicesClient;
+
         /// <summary>
         /// These are the smart home Alexa Interface's supported, Tinamous devices should be tagged with these
         /// if they support them (in addition to the Alexa.SmartHome tag).
         /// </summary>
-        private static List<string> _supportedInterfaces = new List<string>
+        private static readonly List<string> SupportedInterfaces = new List<string>
         {
             "Alexa.TemperatureSensor",
             "Alexa.PercentageController",
@@ -24,13 +28,13 @@ namespace Tinamous.SmartHome.SmartHome
             "Alexa.ColorController",
             "Alexa.PowerController",
             "Alexa.PowerLevelController",
-            "Alexa.LockController",
-            "Alexa.SceneController",
-            "Alexa.ThermostatController",
+            //"Alexa.LockController",
+            //"Alexa.SceneController",
+            //"Alexa.ThermostatController",
             "Alexa.Cooking.TimeController"
         };
 
-        private static List<string> _displayCategoriesTags = new List<string>
+        private static readonly List<string> DisplayCategoriesTags = new List<string>
         {
             "ActivityTrigger",
             "Camera",
@@ -47,7 +51,12 @@ namespace Tinamous.SmartHome.SmartHome
             "TV",
         };
 
-        public async Task<DiscoverResponse> HandleDiscovery(SmartHomeRequest request, ILambdaContext context)
+        public DiscoveryHelper(IDevicesClient devicesClient)
+        {
+            _devicesClient = devicesClient;
+        }
+
+        public async Task<object> HandleAlexaRequest(SmartHomeRequest request, ILambdaContext context)
         {
             LambdaLogger.Log("Building discovery list.");
 
@@ -77,6 +86,11 @@ namespace Tinamous.SmartHome.SmartHome
             return response;
         }
 
+        public Task<List<Property>> CreateProperties(string token, DeviceDto device, string port)
+        {
+            throw new NotSupportedException("Discovery does not support create properties.");
+        }
+
         /// <summary>
         /// Add Tinamous devices tagged with "Alexa.SmartDevice" 
         /// </summary>
@@ -86,8 +100,7 @@ namespace Tinamous.SmartHome.SmartHome
         private async Task AddDeviceEndpoints(SmartHomeRequest request, DiscoverResponse response)
         {
             // Get a list of devices filtered by the Alexa.SmartDevice Tag from Tinamous.
-            var helper = new DevicesClient();
-            List<DeviceDto> devices = await helper.GetDevicesAsync(request.Directive.Payload.Scope.Token);
+            List<DeviceDto> devices = await _devicesClient.GetDevicesAsync(request.Directive.Payload.Scope.Token);
             LambdaLogger.Log("Found " + devices.Count + " devices from Tinamous.");
 
             // Add each of the devices as an endpoint.
@@ -95,69 +108,99 @@ namespace Tinamous.SmartHome.SmartHome
             {
                 LambdaLogger.Log("Adding device " + device.DisplayName);
 
+                if (!device.Connected)
+                {
+                    LambdaLogger.Log("*** Device is not connected but adding it anyway: " + device.DisplayName);
+                }
+
+                if (!device.IsReporting)
+                {
+                    LambdaLogger.Log("*** Device is not reporting but adding it anyway: " + device.DisplayName);
+                }
+
                 // Add the base device, regardless of if it's a 2 port, 4 port or whatever outlet device.
+                // Allows SmartHome basics such as get temperature, and turn on/off to apply to all ports.
                 response.Event.Payload.Endpoints.Add(CreateDeviceEndpoint(device));
 
-                if (device.Tags.Contains("4Port"))
+                // If the device is tagged as a multiport device (i.e. multiple outlets)
+                // Try and also add each of the outlets as a device, giving it a name based
+                // on a state tag set in the devices details.
+                if (device.Tags.Contains("MultiPort"))
                 {
-                    LambdaLogger.Log("Adding 4 Port Device as multiple-devices.");
-                    response.Event.Payload.Endpoints.AddRange(CreateMultiDeviceEndpoint(device, 4));
-                }
-                else if (device.Tags.Contains("2Port"))
-                {
-                    LambdaLogger.Log("Adding 2 Port Device as multiple-devices.");
-                    response.Event.Payload.Endpoints.AddRange(CreateMultiDeviceEndpoint(device, 2));
+                    LambdaLogger.Log("Adding Multi-Port Device as multiple-devices for " + device.DisplayName);
+                    response.Event.Payload.Endpoints.AddRange(CreateMultiDeviceEndpoint(device));
                 }
             }
-        }
-
-        // If a meta tag is set with the nane "Port x" then use the value 
-        // as the device name, otherwise use the port number.
-        private string GetPortName(DeviceDto device, int port)
-        {
-            if (device.MetaTags != null)
-            {
-                string portKey = string.Format("Port {0}", port + 1);
-                var metaTag = device
-                    .MetaTags
-                    .FirstOrDefault(x => portKey.Equals(x.Name, StringComparison.InvariantCultureIgnoreCase));
-
-                if (metaTag != null)
-                {
-                    return metaTag.Value;
-                }
-            }
-            return string.Format("{0} Port {1}", device.DisplayName, port + 1);
         }
 
         /// <summary>
         /// Add in n devices for the one device that has multiple outlets.
         /// </summary>
         /// <param name="device"></param>
-        /// <param name="portCount"></param>
         /// <returns></returns>
-        private List<Endpoint> CreateMultiDeviceEndpoint(DeviceDto device, int portCount)
+        private List<Endpoint> CreateMultiDeviceEndpoint(DeviceDto device)
         {
             List<Endpoint> endpoints = new List<Endpoint>();
+
+            int portCount = GetPortCount(device);
+
+            // Support a max of 16 ports for now...
             for (int port = 0; port < portCount; port++)
             {
-                var endpoint = CreateDeviceEndpoint(device);
-                endpoint.EndpointId += "-port" + port.ToString() + "*";
-                endpoint.FriendlyName = GetPortName(device, port);
-                
-                endpoints.Add(endpoint);
+                int portNumber = port + 1;
+                var endpoint = CreateDeviceEndpoint(device, portNumber);
+                if (endpoint != null)
+                {
+                    endpoints.Add(endpoint);
+                    LambdaLogger.Log("Added device '" + device.DisplayName + "' port " + portNumber + " as '" + endpoint.FriendlyName + "'. EndpointId:" + endpoint.EndpointId);
+                }
+                else
+                {
+                    LambdaLogger.Log("Did not find name for port " + portNumber);
+                }
             }
             return endpoints;
         }
 
-        private Endpoint CreateDeviceEndpoint(DeviceDto device)
+        private int GetPortCount(DeviceDto device)
         {
+            var portCountTag = device
+                .MetaTags
+                .FirstOrDefault(x => x.Name.Equals("PortCount", StringComparison.InvariantCultureIgnoreCase));
+
+            if (portCountTag == null)
+            {
+                LambdaLogger.Log("Did not find PortCount MetaTag, not adding ports for device '" + device.DisplayName + "'");
+                return 0;
+            }
+
+            if (!portCountTag.NumericValue.HasValue)
+            {
+                LambdaLogger.Log("PortCount does not have a valid numeric value for device '" + device.DisplayName + "'");
+                return 0;
+            }
+
+            LambdaLogger.Log("Found PortCount of " + portCountTag.NumericValue.Value + " for device '" + device.DisplayName + "'");
+
+            return portCountTag.NumericValue.Value;
+        }
+
+        private Endpoint CreateDeviceEndpoint(DeviceDto device, int? port = null)
+        {
+            string deviceName = GetPortName(device, port);
+            if (string.IsNullOrWhiteSpace(deviceName))
+            {
+                return null;
+            }
+
+            DeviceAndPort deviceAndPort = new DeviceAndPort(device, port);
+
             var endpoint = new Endpoint
             {
-                EndpointId = device.Id,
-                FriendlyName = device.DisplayName,
+                EndpointId = deviceAndPort.ToString(),
+                FriendlyName = deviceName,
                 Description = device.Description,
-                ManufacturerName = "TinamousSteve",
+                ManufacturerName = "Tinamous",
                 DisplayCategories = new List<string>(),
                 Cookie = new Cookie
                 {
@@ -181,10 +224,37 @@ namespace Tinamous.SmartHome.SmartHome
             return endpoint;
         }
 
+        // If a meta tag is set with the nane "Port x" then use the value 
+        // as the device name, otherwise use the port number.
+        private string GetPortName(DeviceDto device, int? port)
+        {
+            if (!port.HasValue)
+            {
+                return device.DisplayName;
+            }
+
+            if (device.MetaTags != null)
+            {
+                // Look for a meta tag labled as "Port n"
+                string portKey = string.Format("Port {0}", port);
+                var metaTag = device
+                    .MetaTags
+                    .FirstOrDefault(x => portKey.Equals(x.Name, StringComparison.InvariantCultureIgnoreCase));
+
+                if (metaTag != null)
+                {
+                    return metaTag.Value;
+                }
+            }
+
+            // If it is not defined then return null so it can be skipped
+            return null;
+        }
+
         private void AddDisplayCategories(DeviceDto device, Endpoint endpoint)
         {
             // Populate the Display Categoris based on tags found on the device.
-            foreach (string displayCategoryTag in _displayCategoriesTags)
+            foreach (string displayCategoryTag in DisplayCategoriesTags)
             {
                 if (device.Tags.Contains(displayCategoryTag))
                 {
@@ -197,7 +267,7 @@ namespace Tinamous.SmartHome.SmartHome
         private void AddDeviceCapabilities(DeviceDto device, Endpoint endpoint)
         {
             // Populate the Supported Interfaces based on the tags on the device.
-            foreach (string supportedInterface in _supportedInterfaces)
+            foreach (string supportedInterface in SupportedInterfaces)
             {
                 if (device.Tags.Contains(supportedInterface))
                 {

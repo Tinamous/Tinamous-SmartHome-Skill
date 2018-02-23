@@ -31,14 +31,15 @@ namespace Tinamous.SmartHome.Tests.Tinamous
         public async Task GetDevices()
         {
             // Arrange
-            DevicesClient helper = new DevicesClient();
+            var restClient = new RestClient();
+            DevicesClient helper = new DevicesClient(restClient);
 
             // Act
             var devices = await helper.GetDevicesAsync(_authToken);
 
             // Assert
             Assert.IsNotNull(devices);
-            Assert.AreEqual(2, devices.Count);
+            Assert.AreEqual(4, devices.Count);
         }
     }
 }

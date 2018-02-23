@@ -1,0 +1,20 @@
+﻿{
+  "event": {
+    "header": {
+      "namespace": "Alexa.Cooking",
+      "name": "ErrorResponse",
+      "messageId": "a9a87be3-a41a-43c4-b734-04a8fcaf9d3c",
+      "correlationToken": "dFMb0z+PgpgdDmluhJ1LddFvSqZ/jCc8ptlAKulUj90jSqg==",
+      "payloadVersion": "3"
+    },
+    "endpoint": {
+      "endpointId": "appliance-001"
+    },
+    "payload": {
+      "type": "COOK_DURATION_TOO_LONG",
+      "message": "Cannot specify a cook time over 2 hours",
+      "maxCookTime": "PT2H"
+    }
+  }
+}
+R

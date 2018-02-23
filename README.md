@@ -32,22 +32,139 @@ Head on over to Alexa.Amazon.co.uk (or .com I guess), add the skill:
 ** Enter the Tinamous account name, that's the <AccountName>.Tinamous.com bit you use when you navigate to Tinamous for your devices.
 ** Enter your username and password. Alexa will post messages as you so you may prefer to create a new member (called Alexa?) to do them instead.
 
-Tag your devices:
-Tag each of your devices you want Alexa to discover with Alexa.SmartHome
-Additionally use the alexa smarthome interfacs (e.g. Alexa.PowerController) to enable that capability on the device.
-Devices need to have the fields that align with the properties required for the interface. Apply tags to fields to indicate which SmartHome properties they apply to.
 
-Run smart home discovery. Your devices should be listed.
+
 
 When you use phrases such as, "Alexa, Turn on the kettle", the Tinamous SmartHome skill will post a status message "@Kettle turn on".
 Your device should use an MQTT connection to receive these status message and then process the "turn on" command.
 
 Updates should be pushed back to Tinamous through MQTT in the form of field values, when the device is on, the appropriate field should be set to true.
 
+## Development tips
+
+* If you use different email / amazon accounts for day to day alexa, and development, then you can use "Alexa, switch profile" to switch between normal and dev.
+
+## Configure Tinamous Devices.
+
+* Tag the device with "Alexa.SmartDevice"
+* Tag with the Alexa Interface the device supports (e.g. Alexa.PowerController)
+* Implement the required status message (or in future named command) processing.
+* Expose properties required by the Alexa Interface
+** Use tags or named fields to match the required state property.
+
+When Alexa runs device discover the interface will not add supported properties if the fields are not found.
+
+For devices that have multple ports/outlets
+
+* Tag with MultiPort
+* Add the state variable (MetaTag) Name = 'PortCount' Value = the number of ports. (e.g. PortCount,4)
+* For each port you wish to add to Alexa's devices add a Name = "Port-n", Value = Name of the device on the port. (e.g. Port-1,LED Lights )
+* Ports without a name are ignored.
+* Properties for the interfaces exposed by the device should be tagged with the suffix '-port-n' (e.g. powerState-port-1)
+* When quering for properties if the port specific property is not found, the non-port field will be queries.
+
+Run smart home discovery on Alexa. Your devices should be listed.
+
+### Supported Namepspace Interfaces:
+
+#### Alexa.TemperatureSensor
+
+Directives: None
+Properties: temperature
+
+Note: Currently only celcius is supported for temperature.
+
+#### Alexa.PercentageController
+
+Directives: SetPercentage, AdjustPercentage
+Properties: percentage
+
+Status Posts: "@Device Set percentage 90"
+Status Posts: "@Device Set percentage 90 port-1"
+
+Status Posts: "@Device Adjust percentage 10"
+Status Posts: "@Device Adjust percentage 10 port-1"
+
+Utterance: "Alexa, set <> to number percent"
+
+Note: If you also support Alexa.Brightness percentage requests come in as brightness.
+
+#### Alexa.BrightnessController
+
+Directives: SetBrightness, AdjustBrightness
+Properties: brightness
+
+Status Posts: "@Device Set brightness 90"
+Status Posts: "@Device Set brightness 90 port-1"
+
+Status Posts: "@Device Adjust brightness 10"
+Status Posts: "@Device Adjust brightness 10 port-1"
+
+Utterance: "Alexa, set the device to <>"
+Utterance: "Alexa, dim device <>"
+
+#### Alexa.ColorController
+
+Directives: SetColor
+Properties: color
+
+Status Posts: "@Device Set color HSV 240,0.5,0.1
+Status Posts: "@Device Set color HSV 240,0.5,0.1 port-1
+
+Note: color property should be "h,s,v" string value (or h,s,b) - hue, saturation, brightness. (e.g. 200,0.1,0.9)
+
+Note: Report the color property only when the bulb is set to an HSB color
+
+#### Alexa.PowerController
+
+Directives: TurnOn, TurnOff
+Properties: powerState (powerState-port-1)
+
+Property can be boolean (on/off), or string "ON", "OFF" or numeric (>0 for on, 0 for off)
+
+Status Posts: "@Device Turn On"
+Status Posts: "@Device Turn On port-1"
+
+Status Posts: "@Device Turn Off"
+Status Posts: "@Device Turn Of port-1"
+
+#### Alexa.PowerLevelController
+
+Directives: SetPowerLevel, AdjustPowerLevel
+Properties: powerLevel
+
+Status Posts: "@Device Set powerlevel 20"
+Status Posts: "@Device Set powerlevel 20 port-1"
+
+Status Posts: "@Device Adjust powerlevel 10"
+Status Posts: "@Device Adjust powerlevel 10 port-1"
+
+Note: If you also support Alexa.Brightness power level requests come in as brightness.
+
+#### Alexa.LockController - Not Implemented
+
+Directives:
+Properties: lockState
+
+Status Posts: "@Device 
+
+#### lexa.SceneController - Not Implemented
+
+Directives:
+Properties: None
+
+Status Posts: "@Device 
+
+#### Alexa.ThermostatController - Not Implemented
+
+Directives:
+Properties: lowerSetpoint,targetSetpoint,upperSetpoint,thermostatMode
+
+Status Posts: "@Device 
 
 
-
-# Example: BOFF - Box of Four Fans - AWS Lambda functions for fan control using Alexa SmartHome Skill.
+# Use Case:
+# BOFF - Box of Four Fans - AWS Lambda functions for fan control using Alexa SmartHome Skill.
 
 ## Interactions
 

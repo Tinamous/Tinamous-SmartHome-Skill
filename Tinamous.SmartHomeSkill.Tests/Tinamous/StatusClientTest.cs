@@ -30,7 +30,7 @@ namespace Tinamous.SmartHome.Tests.Tinamous
         public async Task PostStatus()
         {
             // Arrange
-            var client = new StatusClient();
+            var client = new StatusClient(new RestClient());
 
             // Act
             await client.PostStatusMessageAsync(_authToken, "Hello from Alexa Unit Tests...");

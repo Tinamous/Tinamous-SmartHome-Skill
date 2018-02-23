@@ -5,17 +5,26 @@ using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Tinamous.SmartHome.Models;
 using Tinamous.SmartHome.Models.PropertyModels;
+using Tinamous.SmartHome.SmartHome.Models;
+using Tinamous.SmartHome.Tinamous;
 using Tinamous.SmartHome.Tinamous.Dtos;
+using Tinamous.SmartHome.Tinamous.Interfaces;
 
 namespace Tinamous.SmartHome.SmartHome
 {
     /// <summary>
     /// See https://developer.amazon.com/docs/device-apis/alexa-brightnesscontroller.html
     /// </summary>
-    public class BrightnessController : AlexaInterfaceControllerBase
+    public class BrightnessController : AlexaSmartHomeInterfaceControllerBase
     {
+        private const string InterfaceNamespace = "Alexa.BrightnessController";
+
+        public BrightnessController(IDevicesClient devicesClient, IMeasurementsClient measurementsClient, IStatusClient statusClient)
+            : base(devicesClient, measurementsClient, statusClient)
+        { }
+
         // / AdjustBrightness, SetBrightness, 
-        public Task<BrightnessControlResponse> HandleBrightnessControl(SmartHomeRequest request, ILambdaContext context)
+        public override Task<object> HandleAlexaRequest(SmartHomeRequest request, ILambdaContext context)
         {
             switch (request.Directive.Header.Name)
             {
@@ -24,11 +33,43 @@ namespace Tinamous.SmartHome.SmartHome
                 case "AdjustBrightness":
                     return HandleAdjustBrightness(request, context);
                 default:
-                    return null;
+                    return NotSupportedDirective(request.Directive);
             }
         }
 
-        private async Task<BrightnessControlResponse> HandleSetBrightness(SmartHomeRequest request, ILambdaContext context)
+
+        /// <summary>
+        /// Create the properties for the StateReport
+        /// </summary>
+        /// <param name="token"></param>
+        /// <param name="device"></param>
+        /// <param name="port"></param>
+        /// <returns></returns>
+        public override async Task<List<Property>> CreateProperties(string token, DeviceDto device, string port)
+        {
+            LambdaLogger.Log("Brightness StateReport");
+
+            List<Property> properties = new List<Property>();
+
+            FieldValueDto value = await GetFieldValue(token, device, "brightness", port);
+
+            if (value != null && value.v.HasValue)
+            {
+                var temperatureProperty = new IntValueProperty
+                {
+                    Namespace = InterfaceNamespace,
+                    Name = "brightness",
+                    Value = Convert.ToInt32(value.v.Value),
+                    TimeOfSample = DateTime.UtcNow,
+                    UncertaintyInMilliseconds = 600
+                };
+                properties.Add(temperatureProperty);
+            }
+
+            return properties;
+        }
+
+        private async Task<object> HandleSetBrightness(SmartHomeRequest request, ILambdaContext context)
         {
             LambdaLogger.Log("Set brightness");
             string token = request.Directive.Endpoint.Scope.Token;
@@ -55,7 +96,7 @@ namespace Tinamous.SmartHome.SmartHome
                         },
                         new ValueValueProperty
                         {
-                            Namespace = "Alexa.BrightnessController",
+                            Namespace = "Alexa.EndpointHealth",
                             Name = "connectivity",
                             Value = new ValuePropertyValue {Value = "ON"},
                             TimeOfSample = DateTime.UtcNow,
@@ -67,7 +108,7 @@ namespace Tinamous.SmartHome.SmartHome
             };
         }
 
-        private async Task<BrightnessControlResponse> HandleAdjustBrightness(SmartHomeRequest request, ILambdaContext context)
+        private async Task<object> HandleAdjustBrightness(SmartHomeRequest request, ILambdaContext context)
         {
             LambdaLogger.Log("Adjust brightness");
             string token = request.Directive.Endpoint.Scope.Token;
@@ -78,35 +119,24 @@ namespace Tinamous.SmartHome.SmartHome
             await SendDeviceStatusMessage(request, token, message);
 
             // Give the device some time to update.
+            // or can we just return empty properties?
             Thread.Sleep(2000);
 
-            FieldValueDto fieldValue = await GetFieldValue(request, token, "brightness");
-            fieldValue = fieldValue ?? new FieldValueDto {v = 50};
+            return await CreateResponse(request, token);
+        }
 
-            // Assume it worked...
+        private async Task<object> CreateResponse(SmartHomeRequest request, string token)
+        {
+            var deviceAndPort = new DeviceAndPort(request.Directive.Endpoint.EndpointId);
+            var device = await GetDevice(token, deviceAndPort);
+
+            var properties = await CreateProperties(token, device, deviceAndPort.Port);
+
             return new BrightnessControlResponse
             {
                 Context = new Context
                 {
-                    Properties = new List<Property>
-                    {
-                        new IntValueProperty
-                        {
-                            Namespace = "Alexa.BrightnessController",
-                            Name = "brightness",
-                            Value = Convert.ToInt32(fieldValue.v),
-                            TimeOfSample = DateTime.UtcNow,
-                            UncertaintyInMilliseconds = 600,
-                        },
-                        new ValueValueProperty
-                        {
-                            Namespace = "Alexa.BrightnessController",
-                            Name = "connectivity",
-                            Value = new ValuePropertyValue {Value = "ON"},
-                            TimeOfSample = DateTime.UtcNow,
-                            UncertaintyInMilliseconds = 600,
-                        },
-                    },
+                    Properties = properties,
                 },
                 Event = ConstructReponseEvent(request.Directive, "Response"),
             };

@@ -3,9 +3,15 @@ using Tinamous.SmartHome.Tinamous.Dtos;
 
 namespace Tinamous.SmartHome.Tinamous
 {
-    public class StatusClient : RestClientBase
+    public class StatusClient : IStatusClient
     {
+        private readonly ITinamousRestClient _restClient;
         private string baseUri = "api/v1/status";
+
+        public StatusClient(ITinamousRestClient restClient)
+        {
+            _restClient = restClient;
+        }
 
         public Task PostStatusMessageAsync(string token, string message)
         {
@@ -14,7 +20,7 @@ namespace Tinamous.SmartHome.Tinamous
                 Message = message,
             };
 
-            return Post(token, baseUri, status);
+            return _restClient.Post(token, baseUri, status);
         }
     }
 }

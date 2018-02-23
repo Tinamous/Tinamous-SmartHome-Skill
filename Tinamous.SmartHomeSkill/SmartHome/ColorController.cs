@@ -4,26 +4,71 @@ using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Tinamous.SmartHome.Models;
 using Tinamous.SmartHome.Models.PropertyModels;
+using Tinamous.SmartHome.Tinamous;
+using Tinamous.SmartHome.Tinamous.Dtos;
+using Tinamous.SmartHome.Tinamous.Interfaces;
 
 namespace Tinamous.SmartHome.SmartHome
 {
     /// <summary>
     /// See: https://developer.amazon.com/docs/device-apis/alexa-colorcontroller.html
     /// </summary>
-    public class ColorController : AlexaInterfaceControllerBase
+    public class ColorController : AlexaSmartHomeInterfaceControllerBase
     {
-        public Task<ColorControlResponse> HandleColorControl(SmartHomeRequest request, ILambdaContext context)
+        private const string InterfaceNamespace = "Alexa.ColorController";
+
+        public ColorController(IDevicesClient devicesClient, IMeasurementsClient measurementsClient, IStatusClient statusClient) 
+            : base(devicesClient, measurementsClient, statusClient)
+        { }
+
+        public override Task<object> HandleAlexaRequest(SmartHomeRequest request, ILambdaContext context)
         {
             switch (request.Directive.Header.Name)
             {
                 case "SetColor":
                     return HandleSetColor(request, context);
                 default:
-                    return null;
+                    return NotSupportedDirective(request.Directive);
             }
         }
 
-        private async Task<ColorControlResponse> HandleSetColor(SmartHomeRequest request, ILambdaContext context)
+        public override async Task<List<Property>> CreateProperties(string token, DeviceDto device, string port)
+        {
+            LambdaLogger.Log("Get Color property");
+
+            List<Property> properties = new List<Property>();
+
+            FieldValueDto value = await GetFieldValue(token, device, "color", port);
+
+            if (value == null || string.IsNullOrWhiteSpace(value.sv))
+            {
+                return properties;
+            }
+
+            string[] hsv = value.sv.Split(",", StringSplitOptions.RemoveEmptyEntries);
+
+            if (hsv.Length == 3)
+            {
+                var temperatureProperty = new ColorValueProperty
+                {
+                    Namespace = InterfaceNamespace,
+                    Name = "color",
+                    Value = new HsvColor
+                    {
+                        Hue = Convert.ToSingle(hsv[0]),
+                        Saturation = Convert.ToSingle(hsv[0]),
+                        Brightness = Convert.ToSingle(hsv[0]),
+                    },
+                    TimeOfSample = DateTime.UtcNow,
+                    UncertaintyInMilliseconds = 600
+                };
+                properties.Add(temperatureProperty);
+            }
+
+            return properties;
+        }
+
+        private async Task<object> HandleSetColor(SmartHomeRequest request, ILambdaContext context)
         {
             LambdaLogger.Log("Set color");
             string token = request.Directive.Endpoint.Scope.Token;
@@ -52,7 +97,7 @@ namespace Tinamous.SmartHome.SmartHome
                         {
                             new ColorValueProperty
                             {
-                                Namespace = "Alexa.ColorController",
+                                Namespace = InterfaceNamespace,
                                 Name = "color",
                                 Value = color, // TODO: Get the actual value back!
                                 TimeOfSample = DateTime.UtcNow,
@@ -60,7 +105,7 @@ namespace Tinamous.SmartHome.SmartHome
                             },
                             new ValueValueProperty
                             {
-                                Namespace = "Alexa.BrightnessController",
+                                Namespace = "Alexa.EndpointHealth",
                                 Name = "connectivity",
                                 Value = new ValuePropertyValue {Value = "ON"},
                                 TimeOfSample = DateTime.UtcNow,
