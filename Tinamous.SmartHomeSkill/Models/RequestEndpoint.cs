@@ -14,5 +14,11 @@ namespace Tinamous.SmartHome.Models
 
         [JsonProperty("scope")]
         public Scope Scope { get; set; }
+
+        /// <summary>
+        /// String name/value pairs that provide additional information about a device for use by the skill. The contents of this property cannot exceed 5000 bytes. The API doesn't use or understand this data.
+        /// </summary>
+        [JsonProperty("cookie")]
+        public Cookie Cookie { get; set; }
     }
 }

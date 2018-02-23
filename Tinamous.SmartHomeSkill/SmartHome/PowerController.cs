@@ -47,10 +47,10 @@ namespace Tinamous.SmartHome.SmartHome
 
             FieldValueDto value = await GetFieldValue(token, device, "powertState", port);
 
-            string stringValue = GetOnOff(value);
-
             if (value != null)
             {
+                string stringValue = GetOnOff(value);
+
                 var temperatureProperty = new StringValueProperty
                 {
                     Namespace = "Alexa.PowerController",
@@ -69,6 +69,18 @@ namespace Tinamous.SmartHome.SmartHome
         {
             LambdaLogger.Log("Turn On");
             string token = request.Directive.Endpoint.Scope.Token;
+
+            // Bit for debugging for a second...
+
+            if (request.Directive.Endpoint.Cookie != null)
+            {
+                LambdaLogger.Log("Endpoint cookie set");
+                LambdaLogger.Log("Endpoint cookie Username: " + request.Directive.Endpoint.Cookie.Username);
+            }
+            else
+            {
+                LambdaLogger.Log("Endpoint cookie was null");
+            }
 
             await SendDeviceStatusMessage(request, token, "Turn On");
 
